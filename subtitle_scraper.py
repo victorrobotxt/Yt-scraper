@@ -1,4 +1,5 @@
 import argparse
+import sys
 from pytube import YouTube
 from bs4 import BeautifulSoup
 
@@ -12,14 +13,20 @@ def extract_plaintext_from_caption_xml(xml_captions: str) -> str:
 
 def get_plaintext_subtitles(video_url: str, language_code: str = "a.en") -> str:
     """Fetch subtitles from a YouTube video."""
-    yt = YouTube(video_url)
-    captions = yt.captions
-    if language_code not in captions:
-        available = ", ".join(captions.keys())
-        raise ValueError(f"No subtitles for language code: {language_code}. Available: {available}")
+    try:
+        yt = YouTube(video_url)
+        captions = yt.captions
+        if language_code not in captions:
+            available = ", ".join(captions.keys())
+            raise ValueError(
+                f"No subtitles for language code: {language_code}. Available: {available}"
+            )
 
-    caption = captions[language_code]
-    xml_captions = caption.xml_captions
+        caption = captions[language_code]
+        xml_captions = caption.xml_captions
+    except Exception as e:  # pylint: disable=broad-except
+        raise RuntimeError(f"Failed to fetch subtitles: {e}") from e
+
     return extract_plaintext_from_caption_xml(xml_captions)
 
 
@@ -40,7 +47,12 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    subtitles = get_plaintext_subtitles(args.video_url, args.language)
+    try:
+        subtitles = get_plaintext_subtitles(args.video_url, args.language)
+    except Exception as e:  # pylint: disable=broad-except
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
+
     with open(args.output, "w", encoding="utf-8") as f:
         f.write(subtitles)
 
