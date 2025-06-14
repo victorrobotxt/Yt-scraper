@@ -1,7 +1,12 @@
 import argparse
 import sys
-from pytube import YouTube
+from pytube import YouTube, extract
 from bs4 import BeautifulSoup
+from youtube_transcript_api import (
+    YouTubeTranscriptApi,
+    TranscriptsDisabled,
+    NoTranscriptFound,
+)
 
 
 def extract_plaintext_from_caption_xml(xml_captions: str) -> str:
@@ -13,6 +18,8 @@ def extract_plaintext_from_caption_xml(xml_captions: str) -> str:
 
 def get_plaintext_subtitles(video_url: str, language_code: str = "a.en") -> str:
     """Fetch subtitles from a YouTube video."""
+    errors = []
+
     try:
         yt = YouTube(video_url)
         captions = yt.captions
@@ -24,10 +31,21 @@ def get_plaintext_subtitles(video_url: str, language_code: str = "a.en") -> str:
 
         caption = captions[language_code]
         xml_captions = caption.xml_captions
+        return extract_plaintext_from_caption_xml(xml_captions)
     except Exception as e:  # pylint: disable=broad-except
-        raise RuntimeError(f"Failed to fetch subtitles: {e}") from e
+        errors.append(e)
 
-    return extract_plaintext_from_caption_xml(xml_captions)
+    # Fallback to youtube_transcript_api
+    try:
+        video_id = extract.video_id(video_url)
+        fallback_language = language_code.split(".")[-1]
+        transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=[fallback_language])
+        lines = [entry["text"].replace("\n", " ") for entry in transcript]
+        return "\n".join(lines)
+    except (TranscriptsDisabled, NoTranscriptFound, Exception) as e:  # pylint: disable=broad-except
+        errors.append(e)
+        raise RuntimeError(f"Failed to fetch subtitles: {errors[-1]}") from e
+
 
 
 def main() -> None:
