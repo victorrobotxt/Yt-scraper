@@ -25,3 +25,7 @@ To use it:
 1. Open the **Actions** tab in GitHub.
 2. Start the **Scrape Subtitles** workflow and provide the `video_url` input. Optionally set `language`.
 3. When the workflow completes, download the `subtitles` artifact from the run summary.
+
+## License
+
+This project is licensed under the terms of the [MIT License](LICENSE).
