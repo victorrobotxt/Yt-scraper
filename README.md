@@ -14,6 +14,8 @@ A small tool to download subtitles from YouTube videos.
    ```
    Replace `<VIDEO_URL>` with the link to the video and adjust the language code if necessary.
 
+Note: `subtitles.txt` is listed in `.gitignore`, so generated subtitles are ignored by Git.
+
 ## GitHub Actions
 
 The repository includes a workflow that can be triggered manually to scrape subtitles and provide them as a build artifact.
